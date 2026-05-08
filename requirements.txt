@@ -1,0 +1,31 @@
+# Web Framework
+flask
+
+# Core Libraries
+numpy
+pandas
+
+# Computer Vision
+opencv-python
+Pillow
+
+# Machine Learning
+scikit-learn
+xgboost
+joblib
+
+# Deep Learning
+tensorflow
+
+# YOLOv8 (Ultralytics)
+ultralytics
+
+# Visualization (used in notebooks/training)
+matplotlib
+
+# Image Processing & Features
+scikit-image
+
+# Optional (for better performance / compatibility)
+seaborn
+tqdm

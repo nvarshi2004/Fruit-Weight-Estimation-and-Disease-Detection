@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Apple Weight and Disease prediction</title>
+
+  <!-- Simple modern styling using Bootstrap CDN -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <style>
+    body {
+      background: radial-gradient(circle at top, #fef2f2, #f1f5f9, #e0f2fe);
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .app-shell {
+      max-width: 960px;
+      margin: 24px auto 32px;
+      padding: 0 16px;
+    }
+
+    .page-title {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .page-title h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .page-title p {
+      margin: 4px 0 0;
+      color: #6b7280;
+      font-size: 0.95rem;
+    }
+
+    .main-card {
+      border-radius: 1.5rem;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+      border: none;
+      overflow: hidden;
+    }
+
+    .upload-header {
+      padding: 18px 20px 8px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .upload-header h2 {
+      font-size: 1.15rem;
+      margin-bottom: 4px;
+      font-weight: 650;
+      color: #111827;
+    }
+
+    .upload-header span {
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+
+    .upload-body {
+      padding: 16px 20px 20px;
+    }
+
+    .image-drop {
+      border-radius: 1rem;
+      border: 1px dashed #cbd5f5;
+      background: #f9fafb;
+      padding: 14px 16px;
+      text-align: center;
+    }
+
+    .image-preview {
+      max-height: 260px;
+      object-fit: contain;
+      border-radius: 0.75rem;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+    }
+
+    .btn-analyze {
+      background: #b91c1c;
+      border-color: #991b1b;
+      font-weight: 600;
+      padding: 0.7rem 1.6rem;
+      border-radius: 999px;
+      box-shadow: 0 14px 30px rgba(185, 28, 28, 0.4);
+    }
+
+    .btn-analyze:hover {
+      background: #991b1b;
+      border-color: #7f1d1d;
+    }
+
+    .results-section {
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      padding: 16px 20px 20px;
+      margin-top: 4px;
+    }
+
+    .results-title {
+      font-size: 0.9rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6b7280;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .metric-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6b7280;
+      font-weight: 600;
+    }
+
+    .metric-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #111827;
+      margin-top: 4px;
+    }
+
+    .metric-sub {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+
+    .alert-danger {
+      background-color: #fee2e2;
+      border-color: #fecaca;
+      color: #991b1b;
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+    }
+
+    .alert-danger strong {
+      font-size: 1.1rem;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    @media (max-width: 768px) {
+      .main-card {
+        border-radius: 1.25rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <div class="page-title">
+      <h1>Apple Weight and Disease prediction</h1>
+      <p>Upload an apple image to estimate weight, freshness grade, and disease status.</p>
+    </div>
+
+    <div class="card main-card">
+      <div class="upload-header d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="mb-0">Weight, Quality &amp; Disease Check</h2>
+          <span>Upload one clear image of a single apple.</span>
+        </div>
+      </div>
+
+      <div class="upload-body">
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <div class="alert alert-warning py-2">
+        {% for message in messages %}
+        <div>{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+
+        <!-- Upload form -->
+        <form action="/analyze" method="POST" enctype="multipart/form-data">
+          <div class="row g-3">
+            <div class="col-12">
+              <div class="image-drop">
+                <label for="image" class="form-label fw-semibold mb-2">Choose image</label>
+                <input
+                  class="form-control mb-2"
+                  type="file"
+                  id="image"
+                  name="image"
+                  accept="image/*"
+                  required
+                  onchange="previewImage(event)"
+                />
+                <small class="text-muted d-block">
+                  Supported formats: JPG, PNG. Best results with a single apple centered in the frame.
+                </small>
+              </div>
+            </div>
+
+            <div class="col-12 text-center">
+              <img
+                id="preview-img"
+                src=""
+                alt="Apple preview"
+                class="img-fluid image-preview {% if not image_name %}d-none{% endif %}"
+              />
+            </div>
+
+            <div class="col-12 d-flex justify-content-center mt-1">
+              <button type="submit" class="btn btn-danger btn-analyze">
+                Analyse Weight &amp; Quality
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Not an apple message -->
+        {% if not_apple_message %}
+        <div class="results-section">
+          <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-exclamation-triangle-fill me-2" viewBox="0 0 16 16">
+              <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+            </svg>
+            <div>
+              <strong>Not an Apple</strong>
+              <div class="small">{{ not_apple_message }}</div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Results -->
+        {% if weight_result is not none or disease_label or weight_error or disease_error %}
+        <div class="results-section">
+          <div class="results-title">Analysis Results</div>
+
+          <div class="row g-3">
+            <!-- Weight prediction -->
+            <div class="col-md-4 col-12">
+              <div>
+                <div class="metric-label">Weight prediction</div>
+                {% if weight_result is not none %}
+                <div class="metric-value">
+                  {{ "%.2f"|format(weight_result) }}
+                </div>
+                <div class="metric-sub">grams</div>
+                {% elif weight_error %}
+                <div class="metric-sub text-danger">
+                  Error: {{ weight_error }}
+                </div>
+                {% else %}
+                <div class="metric-sub text-muted">
+                  No weight prediction.
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Freshness assessment -->
+            <div class="col-md-4 col-12">
+              <div>
+                <div class="metric-label">Freshness assessment</div>
+                {% if freshness_grade %}
+                <div class="metric-value">
+                  {{ freshness_grade }}
+                </div>
+                <div class="metric-sub">
+                  {{ freshness_note }}
+                </div>
+                {% elif disease_error %}
+                <div class="metric-sub text-danger">
+                  Error: {{ disease_error }}
+                </div>
+                {% else %}
+                <div class="metric-sub text-muted">
+                  No freshness prediction.
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Disease check -->
+            <div class="col-md-4 col-12">
+              <div>
+                <div class="metric-label">Disease check</div>
+                {% if disease_human_text %}
+                <div class="metric-value">
+                  {{ disease_human_text }}
+                </div>
+                <div class="metric-sub">
+                  Model class: {{ disease_label }}
+                  {% if disease_confidence is not none %}
+                  ({{ "%.1f"|format(disease_confidence * 100) }}% confidence)
+                  {% endif %}
+                </div>
+                {% elif disease_error %}
+                <div class="metric-sub text-danger">
+                  Error: {{ disease_error }}
+                </div>
+                {% else %}
+                <div class="metric-sub text-muted">
+                  No disease prediction.
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Optional: Bootstrap JS for better UX (not required for logic) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function previewImage(event) {
+      const input = event.target;
+      const preview = document.getElementById("preview-img");
+      if (!input.files || !input.files[0]) {
+        preview.classList.add("d-none");
+        preview.src = "";
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        preview.src = e.target.result;
+        preview.classList.remove("d-none");
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  </script>
+</body>
+
+</html>
+
